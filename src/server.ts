@@ -28,7 +28,34 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-
+  app.get("/filteredImage", (req, res) => {
+    const { image_url } = req.query;
+    //console.log( image_url );
+    if (!image_url) {
+      res.status(400).send({message: 'image_url required'});
+    }
+    
+    const urlExists = require('url-exists-deep');
+    urlExists(image_url).then((exists: Boolean) => {
+      if (!exists) {
+        return res.status(400).send('Validation of URL failed');
+      } else {
+        filterImageFromURL(image_url)
+        .then( 
+          filtered_image => {
+            //console.log( filtered_image );
+            res.sendFile(filtered_image, () =>
+              deleteLocalFiles([filtered_image])
+            );
+          },
+          error => res.sendStatus(422).send("Something bad happened: Unable to process input image.")
+        ).catch (err => {
+          //console.error(err);
+          res.sendStatus(422).send("Something bad happened: Unable to process input image.");
+        });
+      }
+    });
+  });
   //! END @TODO1
   
   // Root Endpoint
